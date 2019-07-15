@@ -1,10 +1,12 @@
+
+/************************* NOT Require for JPA
 package com.example.web_lombok_jdbc_h2_mysql.Interfaces;
 
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 
-@Repository
+//@Repository
 public interface CommonRepository<T>   {
 
 
@@ -16,3 +18,4 @@ public interface CommonRepository<T>   {
     public  Iterable <T> findAll();
 
 }
+ ****************************************/

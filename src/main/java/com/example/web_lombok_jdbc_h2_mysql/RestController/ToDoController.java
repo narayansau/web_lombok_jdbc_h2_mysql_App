@@ -2,7 +2,8 @@ package com.example.web_lombok_jdbc_h2_mysql.RestController;
 
 
 import com.example.web_lombok_jdbc_h2_mysql.Entitiy.ToDo;
-import com.example.web_lombok_jdbc_h2_mysql.Interfaces.CommonRepository;
+//import com.example.web_lombok_jdbc_h2_mysql.Interfaces.CommonRepository;
+import com.example.web_lombok_jdbc_h2_mysql.Interfaces.ToDoRepository;
 import com.example.web_lombok_jdbc_h2_mysql.Validation.ToDoValidationError;
 import com.example.web_lombok_jdbc_h2_mysql.Validation.ToDoValidationErrorBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,36 +15,47 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-public class ToDoController {
+public class ToDoController{
 
-    private CommonRepository<ToDo> repository;
+    private ToDoRepository toDorepository;
 
     @Autowired
-    public ToDoController(CommonRepository<ToDo> repository) {
-        this.repository = repository;
+    public ToDoController(ToDoRepository toDorepository) {
+        this.toDorepository =  toDorepository;
     }
 
     @GetMapping("/todo")
     ResponseEntity< Iterable<ToDo>> getToDos () {
-        return  ResponseEntity.ok(repository.findAll());
+
+        return  ResponseEntity.ok(toDorepository.findAll());
     }
+
     @GetMapping("/todo/{id}")
       public ResponseEntity<ToDo> getToDoById(@PathVariable String id) {
-        return ResponseEntity.ok(repository.findById(id));
+
+        Optional<ToDo> toDo = toDorepository.findById(id);
+        if ( !toDo.isPresent()) return   ResponseEntity.notFound().build();
+        return ResponseEntity.ok(toDo.get());
+
     }
 
     @PatchMapping ("/todo/{id}")
     public ResponseEntity<ToDo> setCompleted (
             @PathVariable String id ) {
-        ToDo result = repository.findById(id);
+        Optional<ToDo> toDo = toDorepository.findById(id);
+        if(!toDo.isPresent())
+            return ResponseEntity.notFound().build();
+        ToDo result = toDo.get();
         result.setCompeted(true);
-        repository.save(result);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().
-                buildAndExpand(result.getId()).toUri();
-        return ResponseEntity.ok().header("Location" , location.toString()).build();
+        toDorepository.save(result);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .buildAndExpand(result.getId()).toUri();
+        return ResponseEntity.ok().header("Location",location.toString()).
+                build();
 
     }
 
@@ -56,7 +68,7 @@ public class ToDoController {
             return ResponseEntity.badRequest().
                     body(ToDoValidationErrorBuilder.fromBindingErrors(errors));
         }
-        ToDo result = repository.save(toDo);
+        ToDo result = toDorepository.save(toDo);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().
                 path("/{id}")
                 .buildAndExpand(result.getId()).toUri();
@@ -65,7 +77,7 @@ public class ToDoController {
 
     @DeleteMapping("/todo")
     public ResponseEntity<ToDo> deleteToDo(@RequestBody ToDo toDo){
-        repository.delete(toDo);
+        toDorepository.delete(toDo);
         return ResponseEntity.noContent().build();
     }
     @ExceptionHandler
